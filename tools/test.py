@@ -83,7 +83,13 @@ def main():
     model_dict = model.state_dict()
     checkpoint_file = args.weights
     logger.info("=> loading checkpoint '{}'".format(checkpoint_file))
-    checkpoint = torch.load(checkpoint_file)
+    #checkpoint = torch.load(checkpoint_file)
+    # zyb, start
+    if isinstance(checkpoint_file, list):
+        checkpoint_file = checkpoint_file[0]  # Take the first file if it's a list
+    checkpoint = torch.load(checkpoint_file, weights_only=True)  # Add weights_only=True to address the warning
+    # zyb end
+
     checkpoint_dict = checkpoint['state_dict']
     # checkpoint_dict = {k: v for k, v in checkpoint['state_dict'].items() if k.split(".")[1] in det_idx_range}
     model_dict.update(checkpoint_dict)

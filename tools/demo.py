@@ -51,7 +51,12 @@ def detect(cfg,opt):
 
     # Load model
     model = get_net(cfg)
-    checkpoint = torch.load(opt.weights, map_location= device)
+    #checkpoint = torch.load(opt.weights, map_location= device)
+    # zyb, start
+    if isinstance(opt.weights, list):
+        checkpoint_file = opt.weights[0]  # Take the first file if it's a list
+    checkpoint = torch.load(checkpoint_file, map_location= device)
+    # zyb, end
     model.load_state_dict(checkpoint['state_dict'])
     model = model.to(device)
     if half:
