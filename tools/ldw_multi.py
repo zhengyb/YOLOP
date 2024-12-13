@@ -25,16 +25,23 @@ def find_lane_lines_multi(ll_seg_mask, min_points=10, eps=20, min_samples=5):
     
     # Separate left and right points based on image center
     # This doesn't work for b1c81faa-3df17267.jpg
-    left_points = points[points[:, 0] < center_x]
-    right_points = points[points[:, 0] >= center_x]
+    #left_points = points[points[:, 0] < center_x]
+    #right_points = points[points[:, 0] >= center_x]
     
     # Find multiple lanes using DBSCAN clustering
-    left_lanes = cluster_lane_points(left_points, eps=eps, min_samples=min_samples)
-    print(f"Left lanes after cluster: {len(left_lanes)}")
-    display_poly_lanes(left_lanes)
-    right_lanes = cluster_lane_points(right_points, eps=eps, min_samples=min_samples)
-    print(f"Right lanes after cluster: {len(right_lanes)}")
-    display_poly_lanes(right_lanes)
+    #left_lanes = cluster_lane_points(left_points, eps=eps, min_samples=min_samples)
+    #print(f"Left lanes after cluster: {len(left_lanes)}")
+    #display_poly_lanes(left_lanes)
+    #right_lanes = cluster_lane_points(right_points, eps=eps, min_samples=min_samples)
+    #print(f"Right lanes after cluster: {len(right_lanes)}")
+    #display_poly_lanes(right_lanes)
+
+    lanes = cluster_lane_points(points,  eps=eps, min_samples=min_samples)
+    print(f"Lanes count: {len(lanes)}")
+    display_poly_lanes(lanes)
+
+    left_lanes, right_lanes = devide_left_right_lanes(lanes, width, height)
+
 
     # Find the most relevant lanes (closest to vehicle)
     left_fit = find_closest_lane(left_lanes, center_x, is_left=True)
@@ -44,12 +51,32 @@ def find_lane_lines_multi(ll_seg_mask, min_points=10, eps=20, min_samples=5):
     
     return left_fit, right_fit, left_lanes, right_lanes
 
+
 def display_poly_lanes(poly_lanes):
     i = 0
     for lane in poly_lanes:
         i = i+1
         print(f"Lane {i}: {lane['fit']}; point count {len(lane['points'])}; {lane['center_y']}")
 
+
+def devide_left_right_lanes(lanes, frame_width, frame_height):
+    center_x = frame_width / 2
+    y_eval = frame_height
+
+    left_lanes = []
+    right_lanes = []
+
+    for lane in lanes:
+        x_pos = np.polyval(lane['fit'], y_eval)
+        if x_pos < center_x:
+            lane['is_left'] = True
+            left_lanes.append(lane)
+        else:
+            lane['is_left'] = False
+            right_lanes.append(lane)
+        lane['xpos_bottom'] = x_pos
+
+    return left_lanes, right_lanes
 
 def cluster_lane_points(points, eps=20, min_samples=5, coeffs0_th=0.01, coeffs1_th=0.1):
     """Cluster lane points into multiple lanes using DBSCAN"""
@@ -81,6 +108,8 @@ def cluster_lane_points(points, eps=20, min_samples=5, coeffs0_th=0.01, coeffs1_
             })
     
     return lanes
+
+
 
 def find_closest_lane(lanes, center_x, is_left=True):
     """Find the most relevant lane (closest to vehicle)"""
@@ -173,7 +202,7 @@ def show_result(dataset, img_det, ll_seg_mask):
         left_fit, right_fit, all_left_lanes, all_right_lanes = find_lane_lines_multi(ll_seg_mask)
             
         # draw all lanes in the img_det
-        img_det = visualize_lanes(img_det, None, all_right_lanes, None, None)
+        img_det = visualize_lanes(img_det, all_left_lanes, all_right_lanes, left_fit, right_fit)
 
         # Check lane departure
         if left_fit is not None and right_fit is not None:
