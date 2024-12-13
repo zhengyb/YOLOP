@@ -28,6 +28,13 @@ from lib.utils import plot_one_box,show_seg_result
 from lib.core.function import AverageMeter
 from lib.core.postprocess import morphological_process, connect_lane
 from tqdm import tqdm
+
+
+#from ldw import show_result
+from ldw_multi import show_result
+#from ldw_multi_hough import show_result
+
+
 normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
@@ -141,7 +148,9 @@ def detect(cfg,opt):
             for *xyxy,conf,cls in reversed(det):
                 label_det_pred = f'{names[int(cls)]} {conf:.2f}'
                 plot_one_box(xyxy, img_det , label=label_det_pred, color=colors[int(cls)], line_thickness=2)
-        
+
+        img_det = show_result(dataset, img_det, ll_seg_mask)
+
         if dataset.mode == 'images':
             cv2.imwrite(save_path,img_det)
 
